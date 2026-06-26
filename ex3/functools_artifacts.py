@@ -1,5 +1,6 @@
 import functools
 import operator
+from typing import Any
 from collections.abc import Callable
 
 
@@ -35,16 +36,41 @@ def memoized_fibonacci(n: int) -> int:
     return memoized_fibonacci(n - 1) + memoized_fibonacci(n - 2)
 
 
-def main() -> None:
-    spell_powers = [13, 45, 13, 14, 30, 42]
-    operations = ['add', 'multiply', 'max', 'min']
-    ops = ['Sum', 'Product', 'Max', 'Min']
-    fibonacci_tests = [13, 19, 8]
+def spell_dispatcher() -> Callable[[Any], str]:
+    @functools.singledispatch
+    def cast_spell(target: Any) -> str:
+        return "Unknown spell type"
 
-    for j, i in zip(ops, operations):
-        print(f"{j}:", spell_reducer(spell_powers, i))
-    print(memoized_fibonacci(10))
-    print(memoized_fibonacci.cache_info())  # cache_info \ lru_cache
+    @cast_spell.register
+    def _(target: str) -> str:
+        return f"Enchatment: {target}"
+
+    @cast_spell.register
+    def _(target: int) -> str:
+        return f"Damage spell: {target} damage"
+
+    @cast_spell.register
+    def _(target: list) -> str:
+        return f"Multi-cast: {len(target)} spells"
+    return cast_spell
+
+
+def main() -> None:
+    print("Testing spell reducer...")
+    print(f"Sum: {spell_reducer([30, 40, 30], 'add')}")
+    print(f"Product: {spell_reducer([100, 2400], 'mul')}")
+    print(f"Max: {spell_reducer([20, 40, 4], 'max')}", end="\n\n")
+    print("Testing memoized fibonacci...")
+    print(f"Fib(0): {memoized_fibonacci(0)}")
+    print(f"Fib(1): {memoized_fibonacci(1)}")
+    print(f"Fib(10): {memoized_fibonacci(10)}")
+    print(f"Fib(15): {memoized_fibonacci(15)}", end="\n\n")
+    print("Testing spell dispatcher...")
+    func = spell_dispatcher()
+    print(func(42))
+    print(func('fireball'))
+    print(func([10, 20, 39]))
+    print(func({"Security": 100}))
 
 
 if __name__ == "__main__":
