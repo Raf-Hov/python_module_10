@@ -1,37 +1,36 @@
 import functools
-import string
 import time
 from typing import Any, Callable
 
 
 def spell_timer(func: Callable) -> Callable:
-
     @functools.wraps(func)
-    def wrapper(*arg: Any, **kwargs: Any) -> Callable:
+    def wrapper(*args, **kwargs) -> Any:
         print(f"Casting {func.__name__}...")
-        start = time.time()
-        value = func(*arg, **kwargs)
-        end = time.time()
-        print(f"Spell completed in {float(end - start):.2f} seconds")
-        return value
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        diference = end - start
+        print(f"Spell completed in {diference:.3f} seconds")
+        return result
     return wrapper
 
 
 def power_validator(min_power: int) -> Callable:
-    def validate(func: Callable) -> Callable:
-
-        def print_message() -> None:
-            print("Insufficient power for this spell")
-            return None
-
+    def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*arg: Any, **kwargs: Any) -> Any:
-            if arg[0] >= min_power:
-                return func(*arg, **kwargs)
+        def wrapper(*args, **kwargs) -> Callable | str:
+            if "power" in kwargs:
+                power = kwargs["power"]
             else:
-                return print_message()
+                power = args[-1]
+
+            if power >= min_power:
+                return func(*args, **kwargs)
+            else:
+                return "Insufficient power for this spell"
         return wrapper
-    return validate
+    return decorator
 
 
 def retry_spell(max_attempts: int) -> Callable:
@@ -40,7 +39,7 @@ def retry_spell(max_attempts: int) -> Callable:
         @functools.wraps(func)
         def wrapper(*arg: Any, **kwargs: Any) -> Any:
             i = 0
-            while i < max_attempts:
+            for i in range(1, max_attempts + 1):
                 try:
                     return func(*arg, **kwargs)
                 except Exception:
@@ -55,21 +54,15 @@ def retry_spell(max_attempts: int) -> Callable:
 class MageGuild:
     @staticmethod
     def validate_mage_name(name: str) -> bool:
-        if not len(name) >= 3:
+        if len(name) >= 3 and isinstance(name, str) and all(
+                char.isalpha() or char.isspace() for char in name):
+            return True
+        else:
             return False
 
-        for letter in name:
-            if (letter not in string.ascii_letters and letter != ' '):
-                return False
-
-        return True
-
-    def cast_spell(self, spell_name: str, power: int) -> None:
-
-        @power_validator(min_power=10)
-        def validate_power(power) -> None:
-            print(f"Successfully cast {spell_name} with {power} power")
-        return validate_power(power)
+    @power_validator(10)
+    def cast_spell(self, spell_name: str, power: int) -> str:
+        return f"Successfully cast {spell_name} with {power} power"
 
 
 @spell_timer
@@ -78,26 +71,30 @@ def fireball_cast() -> str:
 
 
 def main() -> None:
-    try:
-        print('=== Testing spell timer... ===')
-        print(fireball_cast())
-        print('')
+    print("Testing spell timer...")
 
-        print('Testing MageGuild...')
-        name = 'Laurent the wisdom guardian'
-        print(f'Testing name {name}: {MageGuild.validate_mage_name(name)}')
-        name = '42'
-        print(f'Testing name {name}: {MageGuild.validate_mage_name(name)}')
-        print('')
+    @spell_timer
+    def fireball() -> str:
+        time.sleep(0.101)
+        return "Fireball cast"
+    result = fireball()
+    print(f"Result: {result}")
+    print()
+    print("Testing retrying spell...")
+    retry = retry_spell(3)
 
-        laurent = MageGuild()
-        print('=== Working spell ===')
-        laurent.cast_spell('Lightning', 15)
-        print('=== Not working spell ===')
-        laurent.cast_spell('Lightning', 5)
-    except Exception as e:
-        print(e)
-        exit()
+    @retry
+    def seppl() -> None:
+        raise ValueError()
+    print(seppl())
+    print("Wagh spelled !")
+    print()
+    print("Testing MageGuild...")
+    print(MageGuild.validate_mage_name("HelloWorld"))
+    print(MageGuild.validate_mage_name("$"))
+    x = MageGuild()
+    print(f"{x.cast_spell('Lightning', power = 15)}")
+    print(f"{x.cast_spell('Lightning', power = 1)}")
 
 
 if __name__ == '__main__':

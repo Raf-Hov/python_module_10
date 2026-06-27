@@ -38,8 +38,8 @@ def conditional_caster(
     return condit_cast
 
 
-def spell_sequence(spells: list[Callable[[str, int], str]]
-                   ) -> Callable[[str, int], list[str]]:
+def spell_sequence(spells: list[Callable]
+                   ) -> Callable:
     for i in spells:
         if not callable(i):
             raise TypeError("All items in the spells list must be callable!")

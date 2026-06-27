@@ -23,7 +23,7 @@ def spell_accumulator(initial_power: int) -> Callable[[int], int]:
     return spell_acum
 
 
-def enchantment_factory(enchantment_type: str) -> Callable[[str], str]:
+def enchantment_factory(enchantment_type: str) -> Callable:
 
     def ench_factory(name: str) -> str:
         return f"{enchantment_type} {name}"
@@ -64,8 +64,8 @@ def main() -> None:
         print(f"Base {i}, add {j}: {spell}")
 
     print("\nTesting enchantment factory...")
-    for i, j in zip(enchantment_types, items_to_enchant):
-        print(enchantment_factory(i)(j))
+    for k, b in zip(enchantment_types, items_to_enchant):
+        print(enchantment_factory(k)(b))
 
     print("\nTesting memory vault...")
     print("Store 'secret' = 42")
